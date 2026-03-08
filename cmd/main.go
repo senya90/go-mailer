@@ -10,7 +10,7 @@ import (
 
 func main() {
 	config := config.LoadEnv()
-	logger := logger.NewLogger(config.IsProduction)
+	logger := logger.NewLogger(config.IsProduction, config.LogFile)
 
 	mailer := mailer.NewMailer(config, logger)
 	handler := handler.NewMailHandler(mailer, logger)
