@@ -2,20 +2,23 @@ package server
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"mail-service/internal/handler"
 	"net/http"
+	"os"
 )
 
 type Server struct {
 	port    string
 	handler *handler.MailHandler
+	logger  *slog.Logger
 }
 
-func NewServer(port string, handler *handler.MailHandler) *Server {
+func NewServer(port string, handler *handler.MailHandler, logger *slog.Logger) *Server {
 	return &Server{
 		port:    port,
 		handler: handler,
+		logger:  logger,
 	}
 }
 
@@ -24,10 +27,11 @@ func (server *Server) Run() {
 	mux.HandleFunc("POST /send", server.handler.Send)
 
 	address := fmt.Sprintf(":%s", server.port)
-	log.Printf("Mail service started on %s", address)
+	server.logger.Info("Mail service started on", "port", address)
 
 	err := http.ListenAndServe(address, mux)
 	if err != nil {
-		log.Fatalf("Server failed: %v", err)
+		server.logger.Error("Server failed", "error", err)
+		os.Exit(1)
 	}
 }

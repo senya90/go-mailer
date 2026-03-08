@@ -2,6 +2,7 @@ package mailer
 
 import (
 	"fmt"
+	"log/slog"
 	"mail-service/internal/config"
 	"mail-service/internal/models"
 	"net/smtp"
@@ -9,16 +10,20 @@ import (
 )
 
 type Mailer struct {
-	cfg *config.Config
+	cfg    *config.Config
+	logger *slog.Logger
 }
 
-func NewMailer(cfg *config.Config) *Mailer {
+func NewMailer(cfg *config.Config, logger *slog.Logger) *Mailer {
 	return &Mailer{
-		cfg: cfg,
+		cfg:    cfg,
+		logger: logger,
 	}
 }
 
 func (m *Mailer) SendEmail(params *models.SendEmailParams) error {
+	m.logger.Info("Sending email", "to", params.To, "subject", params.Subject)
+
 	auth := smtp.PlainAuth("", m.cfg.SMTPFrom, m.cfg.SMTPPassword, m.cfg.SMTPHost)
 	address := fmt.Sprintf("%s:%d", m.cfg.SMTPHost, m.cfg.SMTPPort)
 
@@ -31,5 +36,13 @@ func (m *Mailer) SendEmail(params *models.SendEmailParams) error {
 	fmt.Fprintf(&mail, "Content-Type: text/html; charset=\"UTF-8\";\r\n")
 	fmt.Fprintf(&mail, "%s", params.Message)
 
-	return smtp.SendMail(address, auth, m.cfg.SMTPFrom, []string{params.To}, []byte(mail.String()))
+	err := smtp.SendMail(address, auth, m.cfg.SMTPFrom, []string{params.To}, []byte(mail.String()))
+
+	if err != nil {
+		m.logger.Error("Failed to send email", "to", params.To, "error", err)
+		return err
+	}
+
+	m.logger.Info("Email sent successfully", "to", params.To)
+	return nil
 }

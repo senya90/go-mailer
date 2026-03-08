@@ -2,7 +2,7 @@ package handler
 
 import (
 	"encoding/json"
-	"log"
+	"log/slog"
 	"mail-service/internal/mailer"
 	"mail-service/internal/models"
 	"net/http"
@@ -10,11 +10,13 @@ import (
 
 type MailHandler struct {
 	mailer *mailer.Mailer
+	logger *slog.Logger
 }
 
-func NewMailHandler(m *mailer.Mailer) *MailHandler {
+func NewMailHandler(m *mailer.Mailer, logger *slog.Logger) *MailHandler {
 	return &MailHandler{
 		mailer: m,
+		logger: logger,
 	}
 }
 
@@ -22,12 +24,14 @@ func (handler *MailHandler) Send(w http.ResponseWriter, r *http.Request) {
 	var params models.SendEmailParams
 	err := json.NewDecoder(r.Body).Decode(&params)
 	if err != nil {
+		handler.logger.Error("Invalid request body", "params", params)
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
 	// todo: добавить библиотеку для валидации
 	if params.To == "" || params.Message == "" {
+		handler.logger.Error("Missing required fields", "params", params)
 		http.Error(w, "Missing required fields", http.StatusBadRequest)
 		return
 	}
@@ -39,12 +43,10 @@ func (handler *MailHandler) Send(w http.ResponseWriter, r *http.Request) {
 	sendErr := handler.mailer.SendEmail(&params)
 
 	if sendErr != nil {
-		log.Printf("Failed to send email to %s: %v", params.To, sendErr)
+		handler.logger.Error("Failed to send email", "to", params.To, "error", sendErr)
 		http.Error(w, "Failed to send email", http.StatusInternalServerError)
-
 		return
 	}
 
-	log.Printf("Email sent to %s", params.To)
 	w.WriteHeader(http.StatusOK)
 }

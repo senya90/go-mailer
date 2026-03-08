@@ -14,6 +14,7 @@ type Config struct {
 	SMTPPort     int
 	SMTPFrom     string
 	SMTPPassword string
+	IsProduction bool
 }
 
 func LoadEnv() *Config {
@@ -34,6 +35,7 @@ func LoadEnv() *Config {
 		SMTPFrom:     mustGetEnv("SMTP_FROM"),
 		SMTPPassword: mustGetEnv("SMTP_PASSWORD"),
 		Port:         mustGetEnv("PORT"),
+		IsProduction: mustGetEnv("IS_PROD") == "true",
 	}
 }
 
