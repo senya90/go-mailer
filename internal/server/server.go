@@ -21,7 +21,7 @@ func NewServer(port string, handler *handler.MailHandler) *Server {
 
 func (server *Server) Run() {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/send", server.handler.Send)
+	mux.HandleFunc("POST /send", server.handler.Send)
 
 	address := fmt.Sprintf(":%s", server.port)
 	log.Printf("Mail service started on %s", address)

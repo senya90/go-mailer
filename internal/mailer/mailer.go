@@ -3,7 +3,9 @@ package mailer
 import (
 	"fmt"
 	"mail-service/internal/config"
+	"mail-service/internal/models"
 	"net/smtp"
+	"strings"
 )
 
 type Mailer struct {
@@ -16,19 +18,18 @@ func NewMailer(cfg *config.Config) *Mailer {
 	}
 }
 
-func (m *Mailer) SendEmail(to string, message string) error {
+func (m *Mailer) SendEmail(params *models.SendEmailParams) error {
 	auth := smtp.PlainAuth("", m.cfg.SMTPFrom, m.cfg.SMTPPassword, m.cfg.SMTPHost)
 	address := fmt.Sprintf("%s:%d", m.cfg.SMTPHost, m.cfg.SMTPPort)
 
-	mail := []byte(
-		"From: " + m.cfg.SMTPFrom + "\r\n" +
-			"To: " + to + "\r\n" +
-			"Subject: Email sender\r\n" +
-			"MIME-version: 1.0;\r\n" +
-			"Content-Type: text/html; charset=\"UTF-8\";\r\n" +
-			"\r\n" +
-			message,
-	)
+	var mail strings.Builder
 
-	return smtp.SendMail(address, auth, m.cfg.SMTPFrom, []string{to}, []byte(mail))
+	fmt.Fprintf(&mail, "From: Mail service. no-reply <%s>\r\n", m.cfg.SMTPFrom)
+	fmt.Fprintf(&mail, "To: %s\r\n", params.To)
+	fmt.Fprintf(&mail, "Subject: %s\r\n", params.Subject)
+	fmt.Fprintf(&mail, "MIME-version: 1.0;\r\n")
+	fmt.Fprintf(&mail, "Content-Type: text/html; charset=\"UTF-8\";\r\n")
+	fmt.Fprintf(&mail, "%s", params.Message)
+
+	return smtp.SendMail(address, auth, m.cfg.SMTPFrom, []string{params.To}, []byte(mail.String()))
 }

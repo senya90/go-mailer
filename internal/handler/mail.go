@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"mail-service/internal/mailer"
+	"mail-service/internal/models"
 	"net/http"
 )
 
@@ -17,18 +18,8 @@ func NewMailHandler(m *mailer.Mailer) *MailHandler {
 	}
 }
 
-type sendEmailParams struct {
-	To      string `json:"to"`
-	Message string `json:"message"`
-}
-
 func (handler *MailHandler) Send(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	var params sendEmailParams
+	var params models.SendEmailParams
 	err := json.NewDecoder(r.Body).Decode(&params)
 	if err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
@@ -41,7 +32,11 @@ func (handler *MailHandler) Send(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sendErr := handler.mailer.SendEmail(params.To, params.Message)
+	if params.Subject == "" {
+		params.Subject = "Mail service notification"
+	}
+
+	sendErr := handler.mailer.SendEmail(&params)
 
 	if sendErr != nil {
 		log.Printf("Failed to send email to %s: %v", params.To, sendErr)
