@@ -22,7 +22,7 @@ func NewMailer(cfg *config.Config, logger *slog.Logger) *Mailer {
 }
 
 func (m *Mailer) SendEmail(params *models.SendEmailParams) error {
-	m.logger.Info("Sending email", "to", params.To, "subject", params.Subject)
+	m.logger.Info("Sending email", "to", params.To, "subject", params.Subject, "message", truncateMessage(params.Message, 10, 7))
 
 	auth := smtp.PlainAuth("", m.cfg.SMTPFrom, m.cfg.SMTPPassword, m.cfg.SMTPHost)
 	address := fmt.Sprintf("%s:%d", m.cfg.SMTPHost, m.cfg.SMTPPort)
@@ -45,4 +45,13 @@ func (m *Mailer) SendEmail(params *models.SendEmailParams) error {
 
 	m.logger.Info("Email sent successfully", "to", params.To)
 	return nil
+}
+
+func truncateMessage(message string, start int, end int) string {
+	runes := []rune(message)
+	if len(runes) <= start+end {
+		return message
+	}
+
+	return string(runes[:start]) + "..." + string(runes[len(runes)-end:])
 }
