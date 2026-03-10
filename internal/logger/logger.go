@@ -2,9 +2,10 @@ package logger
 
 import (
 	"io"
-	"log"
 	"log/slog"
 	"os"
+
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 func NewLogger(isProd bool, logFile string) *slog.Logger {
@@ -12,12 +13,13 @@ func NewLogger(isProd bool, logFile string) *slog.Logger {
 	writers = append(writers, os.Stdout)
 
 	if logFile != "" {
-		file, err := os.OpenFile(logFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-		if err != nil {
-			log.Fatalf("Failed to open file: %v", err)
-		}
-
-		writers = append(writers, file)
+		writers = append(writers, &lumberjack.Logger{
+			Filename:   logFile,
+			MaxSize:    20,
+			MaxBackups: 14,
+			MaxAge:     14,
+			Compress:   false,
+		})
 	}
 
 	multi := io.MultiWriter(writers...)
