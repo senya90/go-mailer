@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"mail-service/internal/mailer"
 	"mail-service/internal/models"
+	"mail-service/internal/validator"
 	"net/http"
 )
 
@@ -29,21 +30,20 @@ func (handler *MailHandler) Send(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// todo: добавить библиотеку для валидации
-	if params.To == "" || params.Message == "" {
-		handler.logger.Error("Missing required fields", "params", params)
-		http.Error(w, "Missing required fields", http.StatusBadRequest)
-		return
-	}
-
 	if params.Subject == "" {
 		params.Subject = "Mail service notification"
 	}
 
-	sendErr := handler.mailer.SendEmail(&params)
+	err = validator.Validate(params)
+	if err != nil {
+		handler.logger.Error("Validation failed", "error", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
-	if sendErr != nil {
-		handler.logger.Error("Failed to send email", "to", params.To, "error", sendErr)
+	err = handler.mailer.SendEmail(&params)
+	if err != nil {
+		handler.logger.Error("Failed to send email", "to", params.To, "error", err)
 		http.Error(w, "Failed to send email", http.StatusInternalServerError)
 		return
 	}

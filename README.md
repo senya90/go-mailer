@@ -8,8 +8,8 @@
 
 - Отправка HTML-писем через SMTP
 - Структурированное логирование через `slog` (текст в dev, JSON в prod)
-- todo: Авторотация лог-файлов через `lumberjack`
-- todo: Готов к запуску через Docker / docker-compose
+- Авторотация лог-файлов через `lumberjack`
+- Готов к запуску через Docker / docker-compose
 
 ---
 
