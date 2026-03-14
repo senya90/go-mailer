@@ -22,6 +22,13 @@ func NewMailHandler(m *mailer.Mailer, logger *slog.Logger) *MailHandler {
 }
 
 func (handler *MailHandler) Send(w http.ResponseWriter, r *http.Request) {
+	apiKey := r.Header.Get("X-Email-Api-Key")
+
+	if apiKey != handler.mailer.Cfg.ApiKey {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
 	var params models.SendEmailParams
 	err := json.NewDecoder(r.Body).Decode(&params)
 	if err != nil {
